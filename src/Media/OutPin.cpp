@@ -91,11 +91,12 @@ void OutPin::SendBuffer(BufferSPTR buffer)
 		if (owner && (owner->ExecutionState() == ExecutionStateEnum::Executing ||
 			owner->ExecutionState() == ExecutionStateEnum::Idle))
 		{
-
+			////printf("ReceiveBuffer");
 			pin->ReceiveBuffer(buffer);
 		}
 		else
 		{
+			//printf("AcceptProcessedBuffer");
 			AcceptProcessedBuffer(buffer);
 		}
 	}

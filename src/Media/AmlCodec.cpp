@@ -44,7 +44,7 @@ AmlCodec::AmlCodec()
 	int r = ioctl(fd, AMSTREAM_IOC_GET_VERSION, &version);
 	if (r == 0)
 	{
-		printf("AmlCodec: amstream version : %d.%d\n", (version & 0xffff0000) >> 16, version & 0xffff);
+		//printf("AmlCodec: amstream version : %d.%d\n", (version & 0xffff0000) >> 16, version & 0xffff);
 
 		if (version >= 0x20000)
 		{
@@ -87,6 +87,10 @@ void AmlCodec::InternalOpen(VideoFormatEnum format, int width, int height, doubl
 			handle = open(CODEC_VIDEO_ES_AV1_DEVICE, flags);
 			break;
 			
+		case VideoFormatEnum::AVS2:
+				handle = open(CODEC_VIDEO_ES_HEVC_SCHED_DEVICE, flags);
+			break;
+			
 		case VideoFormatEnum::Hevc:
 			//case VideoFormatEnum::VP9:
 			handle = open(CODEC_VIDEO_ES_HEVC_DEVICE, flags);
@@ -118,7 +122,7 @@ void AmlCodec::InternalOpen(VideoFormatEnum format, int width, int height, doubl
 	//am_sysinfo.param = (void*)(EXTERNAL_PTS | SYNC_OUTSIDE | USE_IDR_FRAMERATE | UCODE_IP_ONLY_PARAM);
 	//am_sysinfo.param = (void*)(SYNC_OUTSIDE | USE_IDR_FRAMERATE);
 	//am_sysinfo.param = (void*)(EXTERNAL_PTS | SYNC_OUTSIDE | USE_IDR_FRAMERATE);
-	am_sysinfo.param = (void*)(SYNC_OUTSIDE);
+	am_sysinfo.param = (void*)(EXTERNAL_PTS | SYNC_OUTSIDE);
 
 	// Rotation (clockwise)
 	//am_sysinfo.param = (void*)((unsigned long)(am_sysinfo.param) | 0x10000); //90
@@ -203,6 +207,14 @@ void AmlCodec::InternalOpen(VideoFormatEnum format, int width, int height, doubl
 
 			amlFormat = VFORMAT_VC1;
 			am_sysinfo.format = VIDEO_DEC_FORMAT_WVC1;
+			break;
+		case VideoFormatEnum::AVS2:
+			printf("AmlVideoSink - VIDEO/AVS2\n");
+			//printf("%d\n",VFORMAT_AVS2);
+			//printf("%d\n",VIDEO_DEC_FORMAT_AVS2);
+	
+			amlFormat = VFORMAT_AVS2;
+			am_sysinfo.format = VIDEO_DEC_FORMAT_AVS2;
 			break;
 
 		default:
@@ -291,7 +303,7 @@ void AmlCodec::InternalOpen(VideoFormatEnum format, int width, int height, doubl
 
 	//16.10.2023 Sync enable for video-only track files will delay play for 4 seconds...
 	//codec_h_control(pcodec->cntl_handle, AMSTREAM_IOC_SYNCENABLE, (unsigned long)enable);
-	printf("hasAudioSync %d",hasAudioSync);
+	//printf("hasAudioSync %d",hasAudioSync);
 	if (hasAudioSync)
 	{
 		r = ioctl(cntl_handle, AMSTREAM_IOC_SYNCENABLE, (unsigned long)1);
@@ -464,7 +476,7 @@ void AmlCodec::Reset()
 
 	//codec_reset(&codec);
 
-	//codecMutex.Unlock();
+
 	VideoFormatEnum format = this->format;
 	int width = this->width ;
 	int height = this->height ;
@@ -588,7 +600,7 @@ void AmlCodec::SetCurrentPts(double value)
 void AmlCodec::Pause()
 {
 	codecMutex.Lock();
-
+	//printf("=============== AML CODEC Pause ====================");
 	if (!isOpen)
 	{
 		codecMutex.Unlock();
@@ -610,7 +622,7 @@ void AmlCodec::Pause()
 void AmlCodec::Resume()
 {
 	codecMutex.Lock();
-
+	
 	if (!isOpen)
 	{
 		codecMutex.Unlock();
@@ -632,7 +644,7 @@ void AmlCodec::Resume()
 buf_status AmlCodec::GetBufferStatus()
 {
 	codecMutex.Lock();
-
+	struct am_ioctl_parm_ex parm2;
 	if (!isOpen)
 	{
 		codecMutex.Unlock();
@@ -643,11 +655,10 @@ buf_status AmlCodec::GetBufferStatus()
 	buf_status status;
 	if (apiLevel >= ApiLevel::S905)	// S905
 	{
-		am_ioctl_parm_ex parm = { 0 };
-		parm.cmd = AMSTREAM_GET_EX_VB_STATUS;
-		
-		int r = ioctl(handle, AMSTREAM_IOC_GET_EX, (unsigned long)&parm);
-
+        memset(&parm2, 0, sizeof(parm2));
+        parm2.cmd = AMSTREAM_GET_EX_VB_STATUS;
+		unsigned long parm_new; 
+		int r = ioctl(handle, 0xc07853c3, (unsigned long)&parm2);
 		codecMutex.Unlock();
 
 		if (r < 0)
@@ -655,7 +666,7 @@ buf_status AmlCodec::GetBufferStatus()
 			throw Exception("AMSTREAM_GET_EX_VB_STATUS failed.");
 		}
 
-		memcpy(&status, &parm.status, sizeof(status));
+		memcpy(&status, &parm2.status, sizeof(status));
 	}
 	else	// S805
 	{

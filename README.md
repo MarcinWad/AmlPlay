@@ -17,18 +17,19 @@ Compile:
 Command line options:
 	--loop			Loop continuously.
 	--audio hw:0,2	Set ALSA device output (hw:0,2 is default)
+	--timeout X		Timeout of playing source in seconds (useful for RTSP stream)
 
 Supported codecs:
 	Video:
-		AV1 (4K60), VP9 (4K60), Mpeg2, Mpeg4v3 (Divx/Xvid), Mpeg4 (MP4), H264 (AVC), H265 (HEVC)
-		VC1 support is experimental, AV1, VP9
+		AV1 (4K60), VP9 (4K60), Mpeg2, Mpeg4v3 (Divx/Xvid), Mpeg4 (MP4), H264 (AVC), H265 (HEVC), AVS2
+		VC1 support is experimental
 
 	Audio (down-mixed only):
 		Mpeg Layer II (MP2), Mpeg Layer III (MP3), AAC, AC3, EAC3, DTS,
 		TrueHD, Opus, Vorbis
 		WmaPro support is experimental
 
-Supported Input: RTSP, RTMP.
+Supported Input: File, RTSP, RTMP.
 
 Supported containers:
 	MKV, AVI, MP4, WEBM have been tested.

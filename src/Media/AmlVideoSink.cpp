@@ -34,15 +34,15 @@ void AmlVideoSinkElement::timer_Expired(void* sender, const EventArgs& args)
 	if (isEndOfStream && (State() != MediaState::Pause))
 	{
 
-#if 1
+#if 0
 		double pts = amlCodec.GetCurrentPts();
-		printf("AmlVideoSinkElement: timer_Expired - isEndOfStream=true, pts=%f, eosPts=%f\n", pts, eosPts);
+		//printf("AmlVideoSinkElement: timer_Expired - isEndOfStream=true, pts=%f, eosPts=%f\n", pts, eosPts);
 
 		// If the pts is the same as last time (clock tick = 1/4 s),
 		// then assume that playback is done.
 		if (pts == eosPts)
 		{
-			printf("AmlVideoSinkElement: timer_Expired (pausing) - isEndOfStream=true, pts=%f, eosPts=%f\n", pts, eosPts);
+			//printf("AmlVideoSinkElement: timer_Expired (pausing) - isEndOfStream=true, pts=%f, eosPts=%f\n", pts, eosPts);
 			SetState(MediaState::Pause);
 			isEndOfStream = false;
 			eosPts = -1;
@@ -52,6 +52,7 @@ void AmlVideoSinkElement::timer_Expired(void* sender, const EventArgs& args)
 			eosPts = pts;
 		}
 #else
+		//Fix this
 		buf_status bufferStatus = amlCodec.GetBufferStatus();
 		//int api = codec_get_vbuf_state(&codecContext, &bufferStatus);
 		//if (api == 0)
@@ -60,12 +61,12 @@ void AmlVideoSinkElement::timer_Expired(void* sender, const EventArgs& args)
 			//	bufferStatus.free_len, bufferStatus.size, bufferStatus.data_len, bufferStatus.read_pointer, bufferStatus.write_pointer);
 
 			// Testing has shown this value does not reach zero
-			if (bufferStatus.data_len < 512)
+			if (bufferStatus.data_len < 50000)
 			{
-				printf("AmlVideoSinkElement: timer_Expired - isEndOfStream=true, bufferStatus.data_len=%d (Pausing).\n", bufferStatus.data_len);
+				//printf("AmlVideoSinkElement: timer_Expired - isEndOfStream=true, bufferStatus.data_len=%d (Pausing).\n", bufferStatus.data_len);
 				SetState(MediaState::Pause);
-				isEndOfStream = false;
-
+				isEndOfStream = true;
+				eosPts = -1;
 				////debuging
 				//printf("AmlVideoSinkElement: timer_Expired - size=%d, data_len=%d, free_len=%d, read_pointer=%u, write_pointer=%u\n",
 				//	bufferStatus.size, bufferStatus.data_len, bufferStatus.free_len, bufferStatus.read_pointer, bufferStatus.write_pointer);
@@ -94,7 +95,8 @@ void AmlVideoSinkElement::SetupHardware()
 	int height = videoPin->InfoAs()->Height;
 	double frameRate = videoPin->InfoAs()->FrameRate;
 	bool hasAudio = needAudioSync;
-
+	if (width == 0) width = 1920;
+	if (height == 0) height = 1080;
 	amlCodec.Open(videoPin->InfoAs()->Format, width, height, frameRate, hasAudio);
 
 	//memset(&codecContext, 0, sizeof(codecContext));
@@ -212,6 +214,8 @@ void AmlVideoSinkElement::SetupHardware()
 
 void AmlVideoSinkElement::ProcessBuffer(AVPacketBufferSPTR buffer)
 {
+	//printf("AmlVideoSinkElement::ProcessBuffer\n");
+	FILE *fp;
 	playPauseMutex.Lock();
 	 uint32_t length = 0;
 	uint8_t meta_buffer[1024] = {0};
@@ -435,7 +439,11 @@ void AmlVideoSinkElement::ProcessBuffer(AVPacketBufferSPTR buffer)
 
 			break;
 		}
-
+		case VideoFormatEnum::AVS2:
+		{
+			SendCodecData(pts, pkt->data, pkt->size);
+			break;
+		}
 		case VideoFormatEnum::VC1:
 		{
 			SendCodecData(pts, pkt->data, pkt->size);
@@ -467,22 +475,68 @@ bool AmlVideoSinkElement::SendCodecData(unsigned long pts, unsigned char* data, 
 	{
 		amlCodec.CheckinPts(pts);
 	}
-
+	//AVS2 Needs smaller parts maybe....
+	
+	
+	
+	
 	int maxAttempts = 150;
 	int offset = 0;
-	while (offset < length)
+	/*
+	int parts = 32768;
+	
+	if (length < parts)
 	{
+			parts = length;
+	}
+	
+	while (offset != length)
+	{
+		printf("offset %d %d \n",offset,parts);
 		if (!IsRunning())
 		{
 			result = false;
 			break;
+			
+		}
+		
+		int count = amlCodec.WriteData(data + offset, parts);
+		
+		offset += parts;
+		
+		if (offset + parts > length)
+		{
+			//40000
+			parts = length - offset;
+			
+		}
+		else
+		{
+			parts = 32768;
+			
+		}	
+		
+		
+	}
+	return result;
+	*/
+	
+	while (offset < length)
+	{
+		if (!IsRunning())
+		{
+			printf("is not running");
+			result = false;
+			break;
+			
 		}
 
 		int count = amlCodec.WriteData(data + offset, length - offset);
 		if (count > 0)
 		{
 			offset += count;
-			//printf("codec_write send %x bytes of %x total.\n", count, pkt.size);
+			//printf("codec_write send %x bytes of %x total.\n", count, length);
+			
 		}
 		else
 		{
@@ -491,7 +545,7 @@ bool AmlVideoSinkElement::SendCodecData(unsigned long pts, unsigned char* data, 
 
 			if (maxAttempts <= 0)
 			{
-				printf("codec_write max attempts exceeded.\n");
+				//printf("codec_write max attempts exceeded.\n");
 				
 				amlCodec.Reset();
 				result = false;
@@ -502,6 +556,8 @@ bool AmlVideoSinkElement::SendCodecData(unsigned long pts, unsigned char* data, 
 			sleep(0);
 		}
 	}
+	
+	//printf("OUT ==== AmlVideoSink: SendCodecData - pts=%lu, data=%p, length=0x%x\n", pts, data, length);
 
 	return result;
 }
@@ -587,7 +643,7 @@ void AmlVideoSinkElement::DoWork()
 	// TODO: Investigate merging PushProcessedBuffer and ReturnProcessedBuffer
 	//	     into the latter.
 
-
+	//printf("DoWork");
 	BufferSPTR buffer;
 
 	//if (videoPin->TryPeekFilledBuffer(&buffer))
@@ -625,7 +681,7 @@ void AmlVideoSinkElement::DoWork()
 
 					clockInPin->SetFrameRate(info->FrameRate);
 
-					printf("AmlVideoSink: ExtraData size=%ld\n", (long int)extraData.size());
+					//printf("AmlVideoSink: ExtraData size=%ld\n", (long int)extraData.size());
 
 					SetupHardware();
 
@@ -687,7 +743,7 @@ void AmlVideoSinkElement::ChangeState(MediaState oldState, MediaState newState)
 {
 	Element::ChangeState(oldState, newState);
 
-	printf("AmlVideoSinkElement::ChangeState");
+//	printf("AmlVideoSinkElement::ChangeState");
 
 	switch (newState)
 	{

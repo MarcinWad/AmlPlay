@@ -83,6 +83,7 @@ typedef enum {
 	VFORMAT_H264_ENC,
 	VFORMAT_JPEG_ENC,
 	VFORMAT_VP9,
+	VFORMAT_AVS2,
 	VFORMAT_AV1,
 
 	/*add new here before.*/
@@ -174,17 +175,17 @@ struct userdata_poc_info_t {
 };
 
 struct am_ioctl_parm_ex {
-	union {
-		struct buf_status status;
-		struct vdec_status vstatus;
-		struct adec_status astatus;
+    union {
+        struct buf_status status;
+        struct vdec_status vstatus;
+        struct adec_status astatus;
 
-		struct userdata_poc_info_t data_userdata_info;
-		char data[24];
+        struct userdata_poc_info_t data_userdata_info;
+        char data[24];
 
-	};
-	unsigned int cmd;
-	char reserved[4];
+    };
+    unsigned int cmd;
+    char reserved[4];
 };
 
 #define AMSTREAM_IOC_MAGIC 'S'
@@ -286,6 +287,7 @@ class AmlCodec
 
 	const char* CODEC_VIDEO_ES_DEVICE = "/dev/amstream_vbuf";
 	const char* CODEC_VIDEO_ES_HEVC_DEVICE = "/dev/amstream_hevc";
+	const char* CODEC_VIDEO_ES_HEVC_SCHED_DEVICE = "/dev/amstream_hevc";
 	const char* CODEC_VIDEO_ES_AV1_DEVICE = "/dev/amstream_dves_av1";
 	const char* CODEC_CNTL_DEVICE = "/dev/amvideo";
 	typedef int CODEC_HANDLE;

@@ -196,13 +196,7 @@
 #define AMAUDIO_IOC_GET_RESAMPLE_TYPE       _IOR(AMAUDIO_IOC_MAGIC, 0x1c, unsigned long)
 #define AMAUDIO_IOC_SET_RESAMPLE_DELTA      _IOW(AMAUDIO_IOC_MAGIC, 0x1d, unsigned long)
 
-struct buf_status {
-    int size;
-    int data_len;
-    int free_len;
-    unsigned int read_pointer;
-    unsigned int write_pointer;
-};
+
 
 /*struct vdec_status.status*/
 #define STAT_TIMER_INIT     0x01
@@ -225,18 +219,37 @@ struct buf_status {
 #define DECODER_ERROR_MASK  (0xffff<<16)
 
 enum E_ASPECT_RATIO {
-    ASPECT_RATIO_4_3,
-    ASPECT_RATIO_16_9,
-    ASPECT_UNDEFINED = 255
+	ASPECT_RATIO_4_3,
+	ASPECT_RATIO_16_9,
+	ASPECT_UNDEFINED = 255
+};
+
+struct aspect_ratio_info {
+	int sar_width; /* -1 :invalid value */
+	int sar_height; /* -1 :invalid value */
+	int dar_width; /* -1 :invalid value */
+	int dar_height; /* -1 :invalid value */
+};
+
+struct buf_status {
+	int size;
+	int data_len;
+	int free_len;
+	unsigned int read_pointer;
+	unsigned int write_pointer;
 };
 
 struct vdec_status {
-    unsigned int width;
-    unsigned int height;
-    unsigned int fps;
-    unsigned int error_count;
-    unsigned int status;
+	unsigned int width;
+	unsigned int height;
+	unsigned int fps;
+	unsigned int error_count;
+	unsigned int status;
 	enum E_ASPECT_RATIO euAspectRatio;
+	struct aspect_ratio_info aspect_ratio;
+	unsigned long arg;
+	unsigned int size;
+	char reserved[60];
 };
 
 struct adec_status {

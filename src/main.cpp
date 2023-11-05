@@ -86,6 +86,7 @@ void DisplayHelp()
 		printf("Play video using hardware acceleration\n\n");
 
 		printf("      --help\t\tDisplay this help information\n");
+		printf("      --timeout\t\tTimeout for playing in sec\n");
 		printf("      --audio hw:0,2\t\tAlsa Device to play audio on\n");
 		printf("      --avdict 'opts'\tOptions to pass to libav\n");
 		printf("  -l, --loop\t\tLoop continuously\n");
@@ -97,7 +98,7 @@ struct option longopts[] = {
 	{ "chapter",		required_argument,  NULL,          'c' },
 	{ "video",			required_argument,  NULL,          'v' },
 	{ "audio",			required_argument,  NULL,          'a' },
-	{ "subtitle",		required_argument,  NULL,          's' },
+	{ "timeout",		required_argument,  NULL,          't' },
 	{ "avdict",			required_argument,  NULL,          'A' },
 	{ "loop",			no_argument,        NULL,          'l' },
 	{ 0, 0, 0, 0 }
@@ -123,6 +124,7 @@ int main(int argc, char** argv)
 	int c;
 	double optionStartPosition = 0;
 	int optionChapter = -1;
+	int timeout = -1;
 	int optionVideoIndex = 0;
 	int optionAudioIndex = 0;
 	int optionSubtitleIndex = -1;	//disabled by default
@@ -134,6 +136,7 @@ int main(int argc, char** argv)
 	{
 		switch (c)
 		{
+			
 			case 'h':
 				DisplayHelp();
 				exit(EXIT_SUCCESS);
@@ -143,29 +146,9 @@ int main(int argc, char** argv)
 				break;
 
 			case 't':
-			{
-				if (strchr(optarg, ':'))
-				{
-					unsigned int h;
-					unsigned int m;
-					double s;
-					if (sscanf(optarg, "%u:%u:%lf", &h, &m, &s) == 3)
-					{
-						optionStartPosition = h * 3600 + m * 60 + s;
-					}
-					else
-					{
-						printf("invalid time specification.\n");
-						throw Exception();
-					}
-				}
-				else
-				{
-					optionStartPosition = atof(optarg);
-				}
-
-				printf("startPosition=%f\n", optionStartPosition);
-			}
+				timeout = atoi(optarg);
+				printf("timeout=%d\n", timeout);
+			
 			break;
 
 			case 'c':
@@ -236,13 +219,13 @@ int main(int argc, char** argv)
 		close(f2);
 	}
 	int f3 = open("/sys/class/graphics/fb1/blank",O_WRONLY);
-	if (f != -1)
+	if (f3 != -1)
 	{
 		write(f3, "1", 1);
 		close(f3);
 	}
 	
-	int f3 = open("/sys/class/video/disable_video",O_WRONLY);
+	f3 = open("/sys/class/video/disable_video",O_WRONLY);
 	if (f != -1)
 	{
 		write(f3, "2", 1);
@@ -251,7 +234,7 @@ int main(int argc, char** argv)
 	
 	// Initialize libav
 	av_log_set_level(AV_LOG_VERBOSE);
-	av_register_all();
+	
 	avformat_network_init();
 
 
@@ -290,7 +273,9 @@ int main(int argc, char** argv)
 	
 	isRunning = true;
 	bool isPaused = false;
-
+	
+	long timeout_counter = 0;
+	
 	while (isRunning)
 	{
 		isRunning = window->ProcessMessages();
@@ -307,9 +292,15 @@ int main(int argc, char** argv)
 				isRunning = false;
 			}
 		}
+		else if (timeout != 1 && timeout_counter/1000000 > timeout)
+		{
+			printf("Timeout after %ld secs, exiting.",timeout_counter/1000000);
+			isRunning = false;
+		}
 		else
 		{
 			usleep(100);
+			timeout_counter += 100;
 		}
 	}
 

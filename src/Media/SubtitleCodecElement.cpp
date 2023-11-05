@@ -89,6 +89,7 @@ void SubtitleDecoderElement::SetupCodec()
 
 void SubtitleDecoderElement::ProcessBuffer(AVPacketBufferSPTR buffer)
 {
+	/*
 	AVPacket* pkt = buffer->GetAVPacket();
 	
 	if (avSubtitle == nullptr)
@@ -100,7 +101,8 @@ void SubtitleDecoderElement::ProcessBuffer(AVPacketBufferSPTR buffer)
 	//avsubtitle_free (AVSubtitle *sub)
 
 	//avcodecContext->pkt_timebase = buffer->TimeBase();
-	av_codec_set_pkt_timebase(avcodecContext, buffer->TimeBase());
+	//av_codec_set_pkt_timebase(avcodecContext, buffer->TimeBase());
+	avcodecContext->pkt_timebase =buffer->TimeBase();
 	printf("buffer->TimeBase() = num=%u, den=%u\n", buffer->TimeBase().num, buffer->TimeBase().den);
 
 
@@ -136,9 +138,9 @@ void SubtitleDecoderElement::ProcessBuffer(AVPacketBufferSPTR buffer)
 		if (got_sub_ptr)
 		{			
 			//typedef struct AVSubtitle {
-			//3300     uint16_t format; /* 0 = graphics */
-			//3301     uint32_t start_display_time; /* relative to packet pts, in ms */
-			//3302     uint32_t end_display_time; /* relative to packet pts, in ms */
+			//3300     uint16_t format;
+			//3301     uint32_t start_display_time;
+			//3302     uint32_t end_display_time;
 			//3303     unsigned num_rects;
 			//3304     AVSubtitleRect **rects;
 			//3305     int64_t pts;    ///< Same as packet pts, in AV_TIME_BASE
@@ -168,46 +170,12 @@ void SubtitleDecoderElement::ProcessBuffer(AVPacketBufferSPTR buffer)
 			{
 				AVSubtitleRect* rect = avSubtitle->rects[i];
 
-#if 0 // AVSubtitleRect definition
-				//typedef struct AVSubtitleRect {
-				//	3274     int x;         ///< top left corner  of pict, undefined when pict is not set
-				//	3275     int y;         ///< top left corner  of pict, undefined when pict is not set
-				//	3276     int w;         ///< width            of pict, undefined when pict is not set
-				//	3277     int h;         ///< height           of pict, undefined when pict is not set
-				//	3278     int nb_colors; ///< number of colors in pict, undefined when pict is not set
-				//	3279
-				//		3280     /**
-				//				 3281      * data+linesize for the bitmap of this subtitle.
-				//				 3282      * can be set for text/ass as well once they where rendered
-				//				 3283      */
-				//		3284     AVPicture pict;
-				//	3285     enum AVSubtitleType type;
-				//	3286
-				//		3287     char *text;                     ///< 0 terminated plain UTF-8 text
-				//	3288
-				//		3289     /**
-				//				 3290      * 0 terminated ASS/SSA compatible event line.
-				//				 3291      * The presentation of this is unaffected by the other values in this
-				//				 3292      * struct.
-				//				 3293      */
-				//		3294     char *ass;
-				//	3295
-				//		3296     int flags;
-				//	3297
-				//} AVSubtitleRect;
-#endif
+
 
 				printf("Subtitle: Rect - x=%d, y=%d, w=%d, h=%d, nb_colors=%d, text=%p, ass=%p\n",
 					rect->x, rect->y, rect->w, rect->h, rect->nb_colors, rect->text, rect->ass);
 
 
-#if 0 //AVPicture definition
-				//3439 typedef struct AVPicture {
-				//	3440     uint8_t *data[AV_NUM_DATA_POINTERS];    ///< pointers to the image data planes
-				//	3441     int linesize[AV_NUM_DATA_POINTERS];     ///< number of bytes per line
-				//	3442
-				//} AVPicture;
-#endif
 
 				//for (int j = 0; j < AV_NUM_DATA_POINTERS; ++j)
 				//{
@@ -501,6 +469,7 @@ void SubtitleDecoderElement::ProcessBuffer(AVPacketBufferSPTR buffer)
 			avsubtitle_free(avSubtitle);
 		}
 	}
+		*/
 }
 
 

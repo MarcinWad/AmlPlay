@@ -78,18 +78,17 @@ void MediaSourceElement::PrintDictionary(AVDictionary* dictionary)
 void MediaSourceElement::SetupPins()
 {
 	//TODO 
-	printf("avformat_find_stream_info");
+	
 	//int ret = avformat_find_stream_info(ctx, NULL);
 	
-	printf("avformat_find_stream_info2");
+	
 	if (0)
 	{
 		throw Exception("Cannot find stream info");
 	}
 
 
-	duration = ctx->duration / (double)AV_TIME_BASE;
-	printf("Duration: %f\n", duration);
+	
 
 
 	int streamCount = ctx->nb_streams;
@@ -108,11 +107,11 @@ void MediaSourceElement::SetupPins()
 	for (int i = 0; i < streamCount; ++i)
 	{
 		AVStream* streamPtr = ctx->streams[i];
-		AVCodecContext* codecCtxPtr = streamPtr->codec;
+		AVCodecParameters* codecCtxPtr = streamPtr->codecpar;
 		AVMediaType mediaType = codecCtxPtr->codec_type;
 		AVCodecID codec_id = codecCtxPtr->codec_id;
 
-
+		printf("==== %x",codecCtxPtr->width);
 		ExtraDataSPTR ext = std::make_shared<ExtraData>();
 
 		// Copy codec extra data
@@ -125,7 +124,7 @@ void MediaSourceElement::SetupPins()
 		}
 
 
-		switch (mediaType)
+		switch (codecCtxPtr->codec_type)
 		{
 			case AVMEDIA_TYPE_VIDEO:
 			{
@@ -173,6 +172,12 @@ void MediaSourceElement::SetupPins()
 						printf("stream #%d - VIDEO/AV1\n", i);
 						if (info)
 							info->Format = VideoFormatEnum::AV1;
+						break;
+						
+					case AV_CODEC_ID_AVS2:
+						printf("stream #%d - VIDEO/AVS2\n", i);
+						if (info)
+							info->Format = VideoFormatEnum::AVS2;
 						break;
 						
 					case AV_CODEC_ID_VP9:

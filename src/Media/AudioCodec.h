@@ -26,6 +26,10 @@
 #include "Element.h"
 #include "InPin.h"
 
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+}
 
 class AudioCodecElement : public Element
 {

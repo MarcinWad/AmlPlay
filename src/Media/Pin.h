@@ -53,7 +53,8 @@ enum class VideoFormatEnum
 	NV12,
 	NV21,
 	AV1,
-	VP9
+	VP9,
+	AVS2
 };
 
 enum class AudioFormatEnum

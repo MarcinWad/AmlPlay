@@ -21,6 +21,7 @@
 
 void AudioCodecElement::SetupCodec()
 {
+	printf("======= SETUP CODEC ========");
 	switch (audioFormat)
 	{
 	case AudioFormatEnum::Aac:
@@ -120,21 +121,25 @@ void AudioCodecElement::ProcessBuffer(AVPacketBufferSPTR buffer, AVFrameBufferSP
 	AVPacket* pkt = buffer->GetAVPacket();
 	AVFrame* decoded_frame = frame->GetAVFrame();
 
-
+	int ret;
 	// Decode audio
 	//printf("Decoding frame (AVPacket=%p, size=%d).\n",
 	//	buffer->GetAVPacket(), buffer->GetAVPacket()->size);
-
+	int len = -1;
 	int bytesDecoded = 0;
+	ret = avcodec_send_packet(soundCodecContext, pkt);
 	while (IsExecuting() && bytesDecoded < pkt->size)
-	{
+	{	
+		
 		int got_frame = 0;
-		int len = avcodec_decode_audio4(soundCodecContext,
-			decoded_frame,
-			&got_frame,
-			pkt);
-
-		//printf("avcodec_decode_audio4 len=%d\n", len);
+		ret = avcodec_receive_frame(soundCodecContext,decoded_frame);
+		if (ret == 0)
+		{
+			len = decoded_frame->pkt_size;
+			got_frame = 1;
+		}
+		
+		
 
 		if (len < 0)
 		{
@@ -142,7 +147,7 @@ void AudioCodecElement::ProcessBuffer(AVPacketBufferSPTR buffer, AVFrameBufferSP
 			char errmsg[1024] = { 0 };
 			av_strerror(len, errmsg, 1024);
 
-			Log("Error while decoding: %s\n", errmsg);
+			printf("Error while decoding: %s\n", errmsg);
 
 			break;
 		}
@@ -151,7 +156,7 @@ void AudioCodecElement::ProcessBuffer(AVPacketBufferSPTR buffer, AVFrameBufferSP
 			bytesDecoded += len;
 		}
 
-		Log("decoded audio frame OK (len=%x, pkt.size=%x)\n", len, buffer->GetAVPacket()->size);
+		//printf("decoded audio frame OK (len=%x, pkt.size=%x)\n", len, buffer->GetAVPacket()->size);
 
 
 		// Convert audio to ALSA format
@@ -210,7 +215,7 @@ void AudioCodecElement::ProcessBuffer(AVPacketBufferSPTR buffer, AVFrameBufferSP
 			if (buffer->GetAVPacket()->pts != AV_NOPTS_VALUE)
 			{
 				pcmDataBuffer->SetTimeStamp(
-					av_frame_get_best_effort_timestamp(frame->GetAVFrame()) *
+					frame->GetAVFrame()->best_effort_timestamp *
 					av_q2d(buffer->TimeBase()));
 			}
 			else

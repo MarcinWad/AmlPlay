@@ -111,7 +111,7 @@ bool MediaPlayer::IsEndOfStream()
 		}
 	}
 
-	if (State() != MediaState::Pause && audioIsIdle && videoIsIdle)
+	if (State() != MediaState::Pause && videoIsIdle)
 	{
 		result = true;
 	}
