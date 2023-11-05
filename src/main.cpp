@@ -292,7 +292,7 @@ int main(int argc, char** argv)
 				isRunning = false;
 			}
 		}
-		else if (timeout != 1 && timeout_counter/1000000 > timeout)
+		else if (timeout != -1 && timeout_counter/1000000 > timeout)
 		{
 			printf("Timeout after %ld secs, exiting.",timeout_counter/1000000);
 			isRunning = false;
