@@ -1,8 +1,9 @@
 !!! Based on CrashOverride original c2play for Ordoid platform !!!
 
-Install dependencies:
-	sudo apt install libasound2-dev libavformat-dev
+Install dependencies for ALSA:
+	sudo apt install libasound2-dev
 
+Compile and configure latest FFMPEG from trunk.
 
 AmlPlay needs kernel compiled with GE2D and Framebuffer support and loaded TEE modules for video decoders.
 
@@ -10,14 +11,32 @@ Khadas VIM1S should work out of the box. Other devices (Android Players) needs D
 
 Devices tested: Khadas VIM1S, Android TV player OEM with S905W2 and HAKOPro S905Y4.
 
+Changes from original CrashOverride c2play:
+	- added AV1 (4K)
+	- added VP9 (4K)
+	- added AVS2 (4K)
+	- moved from ffmpeg 4 to latest branch (6.x)
+	- added  timeout option
+	- added ALSA device selection
+	- removed Subititle support 
+	- reconstructed video_buffer for end of stream instead of wrong PTS calculations in small files or video-only files
+	- added support for SC2 and S4 support
+	- updated Amlogic Headers and structures to talk with decoders
+	- added support for Amlogic kernel 5.4 
+
+Warning!
+AVS2 support is broken in 5.4.180 media_modules Amlogic kernel modules! Need the 5.4.120 or kernel 5.4.120.
+
+
 Compile:
 	make -j4
 
-
+``
 Command line options:
 	--loop			Loop continuously.
 	--audio hw:0,2	Set ALSA device output (hw:0,2 is default)
 	--timeout X		Timeout of playing source in seconds (useful for RTSP stream)
+``
 
 Supported codecs:
 	Video:
